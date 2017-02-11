@@ -19,6 +19,23 @@
 (eval-in-game
   (pop (game-active-object *game*)))
 
+(defclass mover (actor)
+  ((speed :initform -3 :accessor speed-of :initarg :speed))
+  (:default-initargs :y (@ 5.3)
+                     :x (@ 20)
+                     :width (@ .7)
+                     :height (@ .7)))
+
+(defmethod update ((mover mover) &key &allow-other-keys)
+  (setf #1=(rect-x (sprite-dest-rect mover))
+        (- (mod (+ #1# (speed-of mover) (@ 2))
+                (+ (sdl2:get-window-size *window*) (@ 4)))
+           (@ 2) ))
+  (call-next-method))
+
+(defmethod display ((mover mover) &key &allow-other-keys)
+  (call-next-method))
+
 (eval-in-game
   (push (make-instance 'actor
                        :description *goldie-punch*    
@@ -35,7 +52,7 @@
 
 (eval-in-game
   (loop repeat 7
-        do (add-golden)))
+        do (add-golden-thing)))
 
 (defun all-golden ()
   (remove-if-not (lambda (u) (typep u 'golden-thing))
