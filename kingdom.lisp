@@ -235,7 +235,7 @@
    (height :accessor game-height :initform 10)))
 
 (defun @ (x &optional (game *game*))
-  (* x (game-tile-size game)))
+    (round (* x (game-tile-size game))))
 
 (defmethod (setf game-steps) :after (s (g game))
   (setf (%step-counter g) (clamp (%step-counter g) 0 s)))
