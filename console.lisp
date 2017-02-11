@@ -37,12 +37,21 @@
   (call-next-method))
 
 (eval-in-game
-  (push (make-instance 'actor
-                       :description *goldie-punch*    
+  (change-class (first (game-active-object *game*))
+                'mover))
+
+(eval-in-game (print (class-of (first (game-active-object *game*)))) (terpri))
+
+(eval-in-game
+  (push (make-instance 'mover
+                       :description *helmet-run-forward-left*
                        :x (@ 13)
-                       :y (@ 5)
-                       :width (@ 1)
-                       :height (@ 1))
+                       :y (+ (@ 5.3) 3))
+        (game-active-object *game*))
+  (push (make-instance 'mover
+                       :description *snake-crawl-left*
+                       :x (@ 13.7)
+                       :y (+ (@ 5.3) 3))
         (game-active-object *game*)))
 
 (eval-in-game
