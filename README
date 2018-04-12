@@ -4,3 +4,10 @@ Works on my machine (https://youtu.be/fdh6f4lk0ho).
 
 Graphics from [Buch](http://opengameart.org/users/buch).
 See http://opengameart.org/content/a-platformer-in-the-forest.
+
+## Notes
+
+Tested with SBCL and CCL.
+
+Requires sdl2 and sdl2-ttf.
+
