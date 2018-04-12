@@ -1,47 +1,11 @@
 (in-package :kingdom)
 
 ;;
-;; COMMUNICATION BETWEEN THREADS
-;;
-
-(defparameter *channel* (trivial-channels:make-channel))
-
-(defun send (function)
-  (trivial-channels:sendmsg *channel* function))
-
-(defmacro eval-in-game (&body body)
-  `(send (lambda () ,@body)))
-
-(defun execute-external-functions ()
-  (loop for function = (trivial-channels:getmsg *channel*)
-        while function
-        do (restart-case (funcall function)
-             (continue () :report "Ignore error from external function"))))
-
-(defun discard-external-functions ()
-  (loop for function = (trivial-channels:getmsg *channel*)
-        while function))
-
-
-(defmacro define-command (name args &body body)
-  ;;
-  ;; This macro should have been defined before the "kingdom"
-  ;; package. also, it should be possible to return values from
-  ;; commands (another channel).
-  ;;
-  (with-gensyms (command)
-    `(defun ,name ,args
-       (flet ((,command () ,@body))
-         (if (and (boundp '*game*) *game*)
-             (,command)
-             (send (function ,command)))))))
-
-;;
 ;; RUN A MAIN-LOOP WITH SOME HANDLERS
 ;;
 
-(define-command lone-king ()
-  (setf (game-active-object *game*) (list (find-king))))
+;; (define-command lone-king ()
+;;   (setf (game-active-object *game*) (list (find-king))))
 
 (defun run (main-loop)
   (with-everything (:window (*window* :flags '(:hidden :opengl)) :gl *gl*)
@@ -56,6 +20,9 @@
                (when new-main-loop
                  (setf main-loop new-main-loop))
                (go restart))))))))
+
+(defmacro cl-user::within-thread ((&optional (name "Game")) &body body)
+  `(sb-thread:make-thread (lambda () ,@body) :name ,name))
 
 (defun populate-game (game)
   (setf (game-static-object game)
@@ -92,12 +59,13 @@
 (defun followers ()
   (discard-external-functions)
   (set-window-title *window* "Followers")
-  (with-active-spritesheets (*forest*)
+  (with-active-spritesheets (forest pimples viking)
     (render-clear *renderer*)
-    (let ((*game* (make-instance 'game :tile-size 32)))
+    (let ((*game* (make-instance 'game ;; :tile-size 32
+                                 )))
       (resize-game-window)
       (populate-game *game*)
-      (add-golden-thing)
+      (add-follower)
       (display *game*)
       (render-present *renderer*)
       (show-window *window*)
@@ -127,11 +95,18 @@
 
 ;; USEFUL ENTRY POINTS
 
+(defmacro w(&whole w)w)
+
 (defun cl-user::test ()
   (run 'followers))
 
 (defun cl-user::redo ()
   (ql:quickload :game)
   (cl-user::test))
+
+(define-command current-game () *game*)
+
+(define-command find-objects (predicate)
+  (find-if predicate (game-active-object *game*)))
 
 

@@ -2,6 +2,7 @@
 
 (defparameter *active-textures* nil)
 
+;; we map each spritesheet to a "textures" struct
 (defstruct textures vector spritesheet)
 
 (defun make-textures-from-spritesheet (spritesheet)
@@ -10,7 +11,7 @@
                               (lambda (f)
                                 (sdl2:create-texture-from-surface
                                  *renderer*
-                                 (load-bmp (probe-file f))))
+                                 (sdl2-image:load-image (probe-file f))))
                               (spritesheet-texture-files spritesheet))))
 
 (defun destroy-textures (textures)
@@ -40,23 +41,62 @@
   (unless (textures-vector textures)
     (error 'invalid-textures :instance textures)))
 
-(defmacro with-active-spritesheet (spritesheet &body body)
-  (once-only (spritesheet)
-    (with-gensyms (textures)
-      `(let ((,textures (make-textures-from-spritesheet ,spritesheet)))
-         (unwind-protect
-              (let ((*active-textures* (list* (spritesheet-name ,spritesheet)
-                                              ,textures
-                                              *active-textures*)))
-                ,@body)
-           (ignore-errors (destroy-textures ,textures)))))))
+;; (defun call-with-active-spritesheets (spritesheets fn)
+;;   (let ((*active-textures* *active-textures*))
+;;     (loop for s in (mapcar #'find-spritesheet (ensure-list spritesheets))
+;;           for tex = (make-textures-from-spritesheet s)
+;;           collect tex into cleanup
+;;           do (push tex *active-textures*)
+;;              (push (spritesheet-name s) *active-textures*)
+;;           finally
+;;              (return
+;;                (unwind-protect (funcall fn)
+;;                  (loop for tex in cleanup
+;;                        for err = (nth-value 1 (ignore-errors
+;;                                                (destroy-textures tex)))
+;;                        when err
+;;                          collect err into errors
+;;                        finally
+;;                           (when errors
+;;                             (error
+;;                              "Errors during spritesheet cleanup: ~{~&~S~%~^ ~%~}"
+;;                              errors))))))))
 
-(defmacro with-active-spritesheets ((&rest spritesheets) &body body)
-  (if spritesheets
-      `(with-active-spritesheet ,(first spritesheets)
-         (with-active-spritesheets ,(rest spritesheets)
-           ,@body))
-      `(progn ,@body)))
+(defun deactivate-textures-or-error (textures)
+  (nth-value 1 (ignore-errors (destroy-textures textures))))
+
+(defun call-with-active-spritesheets (spritesheets fn)
+  (let ((old *active-textures*)
+        (*active-textures* *active-textures*))
+    (map nil #'activate-spritesheet spritesheets)
+    (unwind-protect (funcall fn)
+      (loop
+        with errors = nil
+        for list on *active-textures* by #'cddr
+        until (eq list old)
+        do (let ((error (deactivate-textures-or-error (second list))))
+             (when error
+               (push error errors)))
+        finally
+           (when errors
+             (cerror "CONTINUE" "Errors: ~S" (nreverse errors)))))))
+
+(defgeneric activate-spritesheet (spritesheet))
+
+(defmethod activate-spritesheet ((s symbol))
+  (activate-spritesheet (find-spritesheet s)))
+
+(defmethod activate-spritesheet ((s spritesheet))
+  (push (make-textures-from-spritesheet s) *active-textures*)
+  (push (spritesheet-name s) *active-textures*))
+
+(defmethod activate-spritesheet :around ((s spritesheet))
+  (if (getf *active-textures* (spritesheet-name s))
+      (warn "Already activated: ~a" (spritesheet-name s))
+      (call-next-method)))
+
+(defmacro with-active-spritesheets (designator &body body)
+  `(call-with-active-spritesheets ',designator (lambda () ,@body)))
 
 ;; ================================================================
 ;; ANIMATIONS
@@ -81,7 +121,8 @@
     (:reverse
      (if (animation-reversed-p old)
          (second old)
-         `(:reverse ,old)))))
+         `(:reverse ,old)))
+    (t old)))
 
 (defgeneric make-animator (animation)
   (:method (x) x))
@@ -110,9 +151,7 @@
   (setf (sprite-cursor s)
         (mod (1+ (sprite-cursor s)) (length (sprite-rectangles s)))))
 
-
-
-(defmethod sprite-textures :before ((s sprite))
+(defmethod sprite-texture :before ((s sprite))
   (check-textures-active (slot-value s '%textures)))
 
 (defun %update-sprite-for-description (sprite sd)
@@ -125,7 +164,8 @@
     (multiple-value-bind (animation-type reversedp)
         (parse-animation (getf (sprite-description-env sd) :animation))
 
-      (with-slots (texture rectangles cursor animator) sprite
+      (with-slots (texture rectangles cursor animator %textures) sprite
+        (setf %textures textures)
         (setf animator (make-animator animation-type))
         (setf texture (svref (textures-vector textures)
                              (sprite-description-texture-id sd)))
@@ -133,6 +173,9 @@
                              (reverse (sprite-description-rectangles sd))
                              (sprite-description-rectangles sd)))
         (setf cursor 0)))))
+
+(defun %update-sprite (sprite)
+  (%update-sprite-for-description sprite (sprite-description sprite)))
 
 (defmethod shared-initialize :after ((s sprite) slot-names &rest rest)
   (declare (ignore slot-names rest))

@@ -4,6 +4,11 @@
 (defvar *renderer*)
 (defvar *gl*)
 
+;; GAME
+(defvar *game*)
+
+;; Other things
+
 (defgeneric cleanup (thing))
 
 (defgeneric on-key-down (thing &rest args)

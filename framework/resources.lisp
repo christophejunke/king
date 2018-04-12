@@ -46,6 +46,7 @@ relative to the system's source directory."
                   :type default-type)))
 
 (defun font-path (&rest c) (resource c "fonts" "ttf"))
-(defun sprite-path (&rest c) (resource c "sprites" "bmp"))
+(defun sprite-path (&rest c) (resource c "sprites" "png"))
 
 (setup-translations/development)
+
