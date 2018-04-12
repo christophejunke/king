@@ -78,9 +78,12 @@
 
 ;; ================================================================
 
-(defclass king (actor)
+(defclass has-speed ()
+  ((speed :initarg :speed :accessor speed-of :initform 1)))
+
+(defclass king (actor has-speed)
   ((state :initform :idle :accessor king-state)
-   (speed :initform 12 :accessor king-speed)
+   (speed :accessor king-speed)
    (next-move :initform nil :accessor king-next-move)
    (dx :initform 0 :accessor king-dx)
    (dy :initform 0 :accessor king-dy))
@@ -189,7 +192,7 @@
 
 
 
-(defclass golden-thing (actor)
+(defclass golden-thing (actor has-speed)
   ((target :initarg :target :accessor golden-thing-target)
    (proximity :initform (@ 1) :accessor golden-thing-proximity))
   (:default-initargs :description *goldie-idle-left*  
@@ -200,14 +203,15 @@
   (with-accessors ((king golden-thing-target)
                    (sprite sprite-description)
                    (pos sprite-dest-rect)
-                   (margin golden-thing-proximity))
+                   (margin golden-thing-proximity)
+                   (speed speed-of))
       golden-thing
     (let ((dist (- (rect-x (sprite-dest-rect king)) (rect-x pos))))
       (if (>= (abs dist) margin)
           (cond ((plusp dist)
-                 (incf (rect-x pos))
+                 (incf (rect-x pos) speed)
                  (setf sprite *goldie-walk-forward-right*))
-                (t (decf (rect-x pos))
+                (t (decf (rect-x pos) speed)
                    (setf sprite *goldie-walk-forward-left*)))
           (setf sprite
                 (if (plusp dist)
@@ -218,6 +222,7 @@
 (defun add-golden-thing (&optional (x (+ (random (@ 18)) -1)))
   (push (make-instance 'golden-thing
                        :target (find-king)
+                       :speed (ceiling (* 1/64 (game-tile-size *game*)))
                        :x x
                        :y (@ 5))
         (game-active-object *game*)))
@@ -230,7 +235,7 @@
    (%step-counter :initform 0 :accessor %step-counter)
    (static :accessor game-static-object :initform nil)
    (active-object :accessor game-active-object :initform nil)
-   (tile-size :accessor game-tile-size :initform 64)
+   (tile-size :accessor game-tile-size :initform 64 :initarg :tile-size)
    (width :accessor game-width :initform 16)
    (height :accessor game-height :initform 10)))
 

@@ -85,6 +85,7 @@
                       :b 70)))
   (setf (game-active-object game)
         (list (make-instance 'king
+                             :speed (ceiling (/ (* 12 (game-tile-size game)) 64))
                              :x (@ 5)
                              :y (@ 5)))))
 
@@ -93,7 +94,7 @@
   (set-window-title *window* "Followers")
   (with-active-spritesheets (*forest*)
     (render-clear *renderer*)
-    (let ((*game* (make-instance 'game)))
+    (let ((*game* (make-instance 'game :tile-size 32)))
       (resize-game-window)
       (populate-game *game*)
       (add-golden-thing)

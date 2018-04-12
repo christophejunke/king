@@ -60,8 +60,7 @@
 
 
 (eval-in-game
-  (loop repeat 7
-        do (add-golden-thing)))
+  (loop repeat 7 do (add-golden-thing)))
 
 (defun all-golden ()
   (remove-if-not (lambda (u) (typep u 'golden-thing))
