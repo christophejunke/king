@@ -541,36 +541,37 @@
   (apply #'on-key-up (game-active-object g) args))
 
 
-(define-spritesheet viking ()
-  (:animation #'animation-reducer)
-  (let* ((flip '(:flip :horizontal))
-         (left `(left (right ,flip)))
-         (right `(right (left ,flip)))
-         (face-left `((walk () ,@left) (idle (:col 0) ,@left)))
-         (face-right `((walk () ,@right) (idle (:col 0) ,@right))))
-    `(_ (:order (:row :col)
-         :animation :cyclic
-         :transform ,(scale 128)
-         :file ,(or (probe-file #P"/home/chris/all.png")
-                    (error "No such file"))
-         :col (:range 0 5))
-        
-        ((:each (viking (:row 0))
-                (sellsword (:row 1))) ()
-         ,@face-left)
+(ignore-errors
+  (define-spritesheet viking ()
+    (:animation #'animation-reducer)
+    (let* ((flip '(:flip :horizontal))
+           (left `(left (right ,flip)))
+           (right `(right (left ,flip)))
+           (face-left `((walk () ,@left) (idle (:col 0) ,@left)))
+           (face-right `((walk () ,@right) (idle (:col 0) ,@right))))
+      `(_ (:order (:row :col)
+                  :animation :cyclic
+                  :transform ,(scale 128)
+                  :file ,(or (probe-file #P"/home/chris/all.png")
+                             (error "No such file"))
+                  :col (:range 0 5))
+          
+          ((:each (viking (:row 0))
+                  (sellsword (:row 1))) ()
+           ,@face-left)
 
-        ((:each (skeleton (:row 2))
-                (hero (:row 5))) ()
-         ,@face-right)
-        
-        (slime () ((:each (big (:row 3))
-                          (small (:row 4))) ()
-                   ,@face-right))
+          ((:each (skeleton (:row 2))
+                  (hero (:row 5))) ()
+           ,@face-right)
+          
+          (slime () ((:each (big (:row 3))
+                            (small (:row 4))) ()
+                     ,@face-right))
 
-        (robot (:row 6)
-               ,@face-left
-               (shoot (:row 7 :col (0 1 2 3))
-                      ,@left)))))
+          (robot (:row 6)
+                 ,@face-left
+                 (shoot (:row 7 :col (0 1 2 3))
+                        ,@left))))))
 
 
 

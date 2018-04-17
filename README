@@ -9,5 +9,9 @@ See http://opengameart.org/content/a-platformer-in-the-forest.
 
 Tested with SBCL and CCL.
 
-Requires sdl2 and sdl2-ttf.
+Requires
 
+  - sdl2
+  - sdl2-ttf
+  - sdl2-image
+  - libode
