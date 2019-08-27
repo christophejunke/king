@@ -59,9 +59,10 @@
 (defun followers ()
   (discard-external-functions)
   (set-window-title *window* "Followers")
-  (with-active-spritesheets (forest pimples viking)
+  (with-active-spritesheets (forest pimples; viking
+                                    )
     (render-clear *renderer*)
-    (let ((*game* (make-instance 'game ;; :tile-size 32
+    (let ((*game* (make-instance 'game :tile-size 32
                                  )))
       (resize-game-window)
       (populate-game *game*)
