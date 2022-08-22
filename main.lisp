@@ -10,16 +10,12 @@
 (defun run (main-loop)
   (with-everything (:window (*window* :flags '(:hidden :opengl)) :gl *gl*)
     (with-renderer (*renderer* *window*)
-      (handler-bind
-          ((main-loop-restart-condition #'invoke-main-loop-restart))
-        (tagbody
-         restart
-           (restart-case
-               (funcall main-loop)
-             (restart-main-loop (&optional new-main-loop)
-               (when new-main-loop
-                 (setf main-loop new-main-loop))
-               (go restart))))))))
+      (handler-bind ((main-loop-restart-condition #'invoke-main-loop-restart))
+        (loop
+          (restart-case (return (funcall main-loop))
+            (restart-main-loop (&optional new-main-loop)
+              (when new-main-loop
+                (setf main-loop new-main-loop)))))))))
 
 (defmacro cl-user::within-thread ((&optional (name "Game")) &body body)
   `(sb-thread:make-thread (lambda () ,@body) :name ,name))
@@ -56,14 +52,13 @@
                              :x (@ 5)
                              :y (@ 5)))))
 
-(defun followers ()
+(defun followers (&optional (size 32))
   (discard-external-functions)
   (set-window-title *window* "Followers")
   (with-active-spritesheets (forest pimples; viking
                                     )
     (render-clear *renderer*)
-    (let ((*game* (make-instance 'game :tile-size 32
-                                 )))
+    (let ((*game* (make-instance 'game :tile-size size)))
       (resize-game-window)
       (populate-game *game*)
       (add-follower)
@@ -110,4 +105,8 @@
 (define-command find-objects (predicate)
   (find-if predicate (game-active-object *game*)))
 
+(define-command add-follower ()
+  (add-follower%))
+
+(run (lambda () (followers 64)))
 

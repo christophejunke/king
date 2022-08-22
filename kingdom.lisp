@@ -445,7 +445,7 @@
 (defclass golden-follower (golden follower) ())
 (defclass helmet-follower (helmet follower) ())
 
-(defun add-follower (&optional (class 'golden-follower) (x (+ (random (@ 18)) -1)))
+(defun add-follower% (&optional (class 'golden-follower) (x (+ (random (@ 18)) -1)))
   (push (make-instance class
                        :target (find-king)
                        :speed (ceiling (* 1/64 (game-tile-size *game*)))
@@ -492,7 +492,8 @@
   (call-next-method (clamp new 10 100) g))
 
 (defmethod (setf game-tile-size) :around (new (g game))
-  (call-next-method (clamp new 10 256) g))
+  (call-next-method (clamp new 10 256) g)
+  (resize-game-window g))
 
 (defun resize-game-window (&optional (g *game*))
   (set-window-size (game-window g)
